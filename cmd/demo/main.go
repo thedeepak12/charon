@@ -13,7 +13,7 @@ func main() {
 	config.RefillRate = 1
 	config.Interval = 1 * time.Second
 
-	bucket, err := ratelimiter.NewTokenBucket(config)
+	bucket, err := ratelimiter.NewLimiter(config)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
