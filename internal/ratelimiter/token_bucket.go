@@ -65,3 +65,9 @@ func (tb *TokenBucket) Tokens() int64 {
 	defer tb.mu.Unlock()
 	return tb.tokens
 }
+
+func (tb *TokenBucket) Capacity() int64 {
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+	return tb.config.Capacity
+}

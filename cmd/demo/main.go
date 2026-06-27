@@ -2,28 +2,45 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
+	"github.com/thedeepak12/charon/internal/middleware"
 	"github.com/thedeepak12/charon/internal/ratelimiter"
 )
 
 func main() {
 	config := ratelimiter.DefaultConfig()
-	config.Capacity = 20
-	config.RefillRate = 1
+	config.Capacity = 10
+	config.RefillRate = 3
 	config.Interval = 1 * time.Second
 
-	bucket, err := ratelimiter.NewLimiter(config)
+	storage, err := ratelimiter.NewStorage(config)
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Println("Error creating storage:", err)
 		return
 	}
 
-	fmt.Printf("Bucket initialized:\n%v\n", bucket)
+	rateLimitMiddleware := middleware.NewRateLimitMiddleware(storage, middleware.ExtractIP)
 
-	for i := 0; i < 50; i++ {
-		allowed := bucket.Allow()
-		fmt.Printf("Request %d: Allowed = %v\n Tokens = %d\n", i+1, allowed, bucket.Tokens())
-		time.Sleep(500 * time.Millisecond)
-	}
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		key := middleware.ExtractIP(r)
+		limiter := storage.GetOrCreate(key)
+
+		response := fmt.Sprintf(
+			"Request from: %s\nTokens: %d/%d\nActive limiters: %d",
+			key,
+			limiter.Tokens(),
+			limiter.Capacity(),
+			storage.Size(),
+		)
+		w.Write([]byte(response))
+	})
+
+	handler := rateLimitMiddleware.Handler(mux)
+
+	fmt.Println("Server starting on :4000")
+	http.ListenAndServe(":4000", handler)
 }
