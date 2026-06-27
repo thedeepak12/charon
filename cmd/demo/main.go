@@ -12,7 +12,7 @@ import (
 func main() {
 	config := ratelimiter.DefaultConfig()
 	config.Capacity = 10
-	config.RefillRate = 3
+	config.RefillRate = 1
 	config.Interval = 1 * time.Second
 
 	storage, err := ratelimiter.NewStorage(config)

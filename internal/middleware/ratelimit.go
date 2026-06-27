@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/thedeepak12/charon/internal/ratelimiter"
 )
@@ -50,7 +51,8 @@ func ExtractIP(r *http.Request) string {
 	var ip string
 
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		ip = xff
+		ips := strings.Split(xff, ",")
+		ip = strings.TrimSpace(ips[0])
 	} else if xri := r.Header.Get("X-Real-IP"); xri != "" {
 		ip = xri
 	} else {
